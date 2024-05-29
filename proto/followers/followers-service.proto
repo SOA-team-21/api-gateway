@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package follower;
+
+option go_package = "api-gateway/proto/follower";
+
+import "google/api/annotations.proto";
+
+service FollowersService{
+    rpc GetProfile(UserIdRequset) returns(PersonResponse){
+        option(google.api.http) = {
+            get: "/api/userprofile/{UserId}"
+        };
+    }
+    rpc GetFollowers(UserIdRequset) returns(FollowersResponse){
+        option(google.api.http) = {
+            get: "/api/userprofile/followers/{UserId}/followers"
+        };
+    }
+    rpc GetRecommended(UserIdRequset) returns(FollowersResponse){
+        option(google.api.http) = {
+            get: "/api/userprofile/followers/{UserId}/recommended"
+        };
+    }
+    rpc GetFollowing(UserIdRequset) returns(FollowersResponse){
+        option(google.api.http) = {
+            get: "/api/userprofile/followers/{UserId}/following"
+        };
+    }
+    rpc IsFollowing(TwoUserIdRequest) returns(StatusCodeResponse){
+        option(google.api.http) = {
+            get: "/api/userprofile/followers/{UserId1}/{UserId2}/isFollowing"
+        };
+    }
+    rpc Follow(TwoUserIdRequest) returns(StatusCodeResponse){
+        option(google.api.http) = {
+            post: "/api/userprofile/followers/{UserId1}/follow/{UserId2}"
+        };
+    }
+    rpc Unfollow(TwoUserIdRequest) returns(StatusCodeResponse){
+        option(google.api.http) = {
+            delete: "/api/userprofile/followers/{UserId1}/unfollow/{UserId2}"
+        };
+    }
+}
+
+
+message Follower{
+	int64 UserId = 1;
+	string Name = 2;
+	string Surname = 3;
+	string Quote = 4;
+	string Email = 5;
+}
+
+message StatusCodeResponse{
+    int64 StatusCode = 1;
+    string message = 2;
+}
+
+message FollowersResponse{
+    repeated Follower Followers = 1;
+}
+
+message PersonResponse{
+    string Id = 1;
+    string UserId = 2;
+    string Name = 3;
+    string Surname = 4;
+    string Picture = 5;
+    string Bio = 6;
+    string Quote = 7;
+    string Email = 8;
+}
+
+message UserIdRequset{
+    int64 UserId = 1;
+}
+
+message TwoUserIdRequest{
+    int64 UserId1 = 1;
+    int64 UserId2 = 2;
+}
