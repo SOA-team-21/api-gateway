@@ -10,6 +10,7 @@ import (
 
 	"api-gateway.com/middleware"
 	follower "api-gateway.com/proto/followers"
+	"api-gateway.com/proto/tours"
 	"api-gateway.com/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -28,7 +29,24 @@ func main() {
 	}
 	defer followersConnection.Close()
 
+	tourConnection, err := grpc.DialContext(
+		context.Background(),
+		"localhost:88",
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer tourConnection.Close()
+
 	gwmux := runtime.NewServeMux()
+
+	tourClient := tours.NewToursServiceClient(tourConnection)
+	err = tours.RegisterToursServiceHandlerClient(context.Background(), gwmux, tourClient)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	followersClient := follower.NewFollowersServiceClient(followersConnection)
 	err = follower.RegisterFollowersServiceHandlerClient(context.Background(), gwmux, followersClient)
