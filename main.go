@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"api-gateway.com/middleware"
+	"api-gateway.com/proto/auth"
 	follower "api-gateway.com/proto/followers"
 	"api-gateway.com/proto/tours"
 	"api-gateway.com/utils"
@@ -18,6 +19,15 @@ import (
 )
 
 func main() {
+	gwmux := runtime.NewServeMux()
+
+	authConnection, err := grpc.DialContext(
+		context.Background(),
+		"localhost:90",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	defer authConnection.Close()
+
 	followersConnection, err := grpc.DialContext(
 		context.Background(),
 		"localhost:8080",
@@ -40,7 +50,11 @@ func main() {
 	}
 	defer tourConnection.Close()
 
-	gwmux := runtime.NewServeMux()
+	authClient := auth.NewAuthServiceClient(authConnection)
+	err = auth.RegisterAuthServiceHandlerClient(context.Background(), gwmux, authClient)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	tourClient := tours.NewToursServiceClient(tourConnection)
 	err = tours.RegisterToursServiceHandlerClient(context.Background(), gwmux, tourClient)
