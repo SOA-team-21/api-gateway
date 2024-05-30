@@ -5,6 +5,7 @@ package tours;
 option go_package = "api-gateway/proto/tours";
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 service ToursService{
 
