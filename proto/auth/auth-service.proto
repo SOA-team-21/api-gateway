@@ -13,8 +13,21 @@ service AuthService{
       body: "*"
     };
   }
+  rpc ValidateToken(TokenRequest) returns(StatusCodeResponse){
+    option(google.api.http) = {
+      get: "/validateToken"
+    };
+  }
 
 }
+message TokenRequest{
+  string Token = 1;
+}
+
+message StatusCodeResponse{
+  int64 StatusCode = 1;
+}
+
 message AuthCredentials{
   string Username = 1;
   string Password  = 2;
