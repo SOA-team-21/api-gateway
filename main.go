@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,14 +25,14 @@ func main() {
 
 	authConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:90",
+		"auth:90",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	defer authConnection.Close()
 
 	followersConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:8080",
+		"followers:8080",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -42,7 +43,7 @@ func main() {
 
 	tourConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:88",
+		"tours:88",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -58,7 +59,7 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
 	defer encounterConnection.Close()
 
@@ -83,7 +84,7 @@ func main() {
 	encountersClient := encounters.NewEncountersServiceClient(encounterConnection)
 	err = encounters.RegisterEncountersServiceHandlerClient(context.Background(), gwmux, encountersClient)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
 
 	handler := middleware.JwtMiddleware(gwmux, utils.GetProtectedPaths())
@@ -91,9 +92,9 @@ func main() {
 	gwServer.Handler = addCorsMiddleware(gwmux)
 
 	go func() {
-		log.Println("Starting HTTP server on port 8083")
+		fmt.Println("Starting HTTP server on port 8083")
 		if err := gwServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("ListenAndServe(): %v", err)
+			fmt.Println("ListenAndServe(): %v", err)
 		}
 	}()
 
@@ -101,7 +102,7 @@ func main() {
 	signal.Notify(stopCh, syscall.SIGTERM, syscall.SIGINT)
 	<-stopCh
 
-	log.Println("Shutting down the server...")
+	fmt.Println("Shutting down the server...")
 
 	if err := gwServer.Shutdown(context.Background()); err != nil {
 		log.Fatalln(err)
