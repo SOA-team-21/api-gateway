@@ -79,6 +79,25 @@ message SocialEncounterResponse {
 	repeated Participant CurrentlyInRange = 12;
 }
 
+message HiddenEncountersResponse{
+    repeated HiddenEncounterResponse HiddenEncounters = 1;
+}
+
+message HiddenEncounterResponse{
+    int64 Id = 1;
+	string Name = 2;
+	string Description = 3;
+	Location Location = 4;
+	int64 Experience = 5;
+	EncounterStatus Status = 6;
+	EncounterType Type = 7;
+	int64 Radius = 8;
+	repeated Participant Participants = 9;
+	repeated Completer Completers = 10;
+	string Image = 11;
+	Location PointLocation = 12;
+}
+
 message Location {
 	int64 Id = 1;
 	float Latitude = 2;
@@ -111,6 +130,11 @@ enum EncounterType {
 }
 
 message ActivateSocialEncounterRequest {
+    string Id = 1;
+    ParticipantLocation ParticipantLocation = 2;
+}
+
+message ActivateHiddenEncounterRequest {
     string Id = 1;
     ParticipantLocation ParticipantLocation = 2;
 }
