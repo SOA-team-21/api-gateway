@@ -9,6 +9,33 @@ import "google/protobuf/timestamp.proto";
 
 service EncountersService{
 
+    rpc GetAllHiddenEncounters(EmptyRequest) returns(HiddenEncountersResponse){
+        option(google.api.http) = {
+            get: "/api/hidden-encounters/getAll"
+        };
+    }
+
+    rpc PostHiddenEncounter(HiddenEncounterResponse) returns(HiddenEncounterResponse){
+         option(google.api.http) = {
+            post: "/api/hidden-encounters"
+            body: "*"
+        };
+    }
+
+    rpc ActivateHiddenEncounter(ActivateHiddenEncounterRequest) returns(EmptyResponse){
+        option(google.api.http) = {
+            put: "/api/encounters/activate/{Id}"
+            body: "*"
+        };
+    }
+
+    rpc SolveHiddenEncounter(ActivateHiddenEncounterRequest) returns(EmptyResponse){
+        option(google.api.http) = {
+            put: "/api/hidden-encounters/solve-hidden/{Id}"
+            body: "*"
+        };
+    }
+
     rpc GetAllSocialEncounters(EmptyRequest) returns(SocialEncountersResponse){
         option(google.api.http) = {
             get: "/api/social-encounters/getAll"
@@ -27,7 +54,6 @@ service EncountersService{
             body: "*"
         };
     }
-
 }
 
 message EmptyRequest {}

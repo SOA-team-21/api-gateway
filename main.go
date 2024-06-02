@@ -53,7 +53,7 @@ func main() {
 
 	encounterConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:8082",
+		"encounters:8082", //or localhost
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -89,21 +89,25 @@ func main() {
 	handler := middleware.JwtMiddleware(gwmux, utils.GetProtectedPaths())
 	gwServer := &http.Server{Addr: ":8083", Handler: handler}
 	gwServer.Handler = addCorsMiddleware(gwmux)
+
 	go func() {
 		log.Println("Starting HTTP server on port 8083")
-		if err := gwServer.ListenAndServe(); err != nil {
-			log.Fatalln(err)
+		if err := gwServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServe(): %v", err)
 		}
 	}()
 
-	stopCh := make(chan os.Signal)
-	signal.Notify(stopCh, syscall.SIGTERM)
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, syscall.SIGTERM, syscall.SIGINT)
 	<-stopCh
 
-	if err = gwServer.Close(); err != nil {
+	log.Println("Shutting down the server...")
+
+	if err := gwServer.Shutdown(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 
+	log.Println("Server gracefully stopped")
 }
 
 func addCorsMiddleware(handler http.Handler) http.Handler {
@@ -111,7 +115,7 @@ func addCorsMiddleware(handler http.Handler) http.Handler {
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		//w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
