@@ -1,5 +1,10 @@
 version: '3.9'
 
+x-logging: &fluent-bit
+  driver: fluentd
+  options:
+    fluentd-address: ${FLUENT_BIT_ADDRESS}:24224
+
 services:
   api_gateway:
     build:
@@ -10,6 +15,7 @@ services:
     restart: always
     networks:
       - database
+      - monitoring
     ports:
       - "8083:8083"
 
@@ -21,8 +27,12 @@ services:
     restart: always
     networks:
       - database
+      - monitoring
+    environment:
+      - JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
     ports:
       - "88:88"
+    logging: *fluent-bit
     depends_on:
       tours-database:
         condition: service_healthy
@@ -144,11 +154,13 @@ services:
     restart: always
     networks:
       - database
+      - monitoring
     environment:
       POSTGRES_PASSWORD: super
       POSTGRES_USER: postgres
       POSTGRES_DB: soa_tours
       PGSEARCHPATH: tours
+    logging: *fluent-bit
     volumes:
       - tours-database-data:/var/lib/postgresql/data
       - type: bind
@@ -196,3 +208,5 @@ volumes:
 networks:
   database:
     driver: bridge
+  monitoring:
+    external: true
