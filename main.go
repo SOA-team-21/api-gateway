@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"api-gateway.com/middleware"
 	"api-gateway.com/proto/auth"
+	"api-gateway.com/proto/encounters"
 	follower "api-gateway.com/proto/followers"
 	"api-gateway.com/proto/tours"
 	"api-gateway.com/utils"
@@ -23,14 +25,14 @@ func main() {
 
 	authConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:90",
+		"auth:90",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	defer authConnection.Close()
 
 	followersConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:8080",
+		"followers:87",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -41,7 +43,7 @@ func main() {
 
 	tourConnection, err := grpc.DialContext(
 		context.Background(),
-		"localhost:88",
+		"tours:88",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -49,6 +51,17 @@ func main() {
 		log.Fatalln(err)
 	}
 	defer tourConnection.Close()
+
+	encounterConnection, err := grpc.DialContext(
+		context.Background(),
+		"encounters:8082", //or localhost
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer encounterConnection.Close()
 
 	authClient := auth.NewAuthServiceClient(authConnection)
 	err = auth.RegisterAuthServiceHandlerClient(context.Background(), gwmux, authClient)
@@ -68,24 +81,34 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	encountersClient := encounters.NewEncountersServiceClient(encounterConnection)
+	err = encounters.RegisterEncountersServiceHandlerClient(context.Background(), gwmux, encountersClient)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	handler := middleware.JwtMiddleware(gwmux, utils.GetProtectedPaths())
 	gwServer := &http.Server{Addr: ":8083", Handler: handler}
 	gwServer.Handler = addCorsMiddleware(gwmux)
+
 	go func() {
-		log.Println("Starting HTTP server on port 8083")
-		if err := gwServer.ListenAndServe(); err != nil {
-			log.Fatalln(err)
+		fmt.Println("Starting HTTP server on port 8083")
+		if err := gwServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Println("ListenAndServe(): %v", err)
 		}
 	}()
 
-	stopCh := make(chan os.Signal)
-	signal.Notify(stopCh, syscall.SIGTERM)
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, syscall.SIGTERM, syscall.SIGINT)
 	<-stopCh
 
-	if err = gwServer.Close(); err != nil {
+	fmt.Println("Shutting down the server...")
+
+	if err := gwServer.Shutdown(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 
+	log.Println("Server gracefully stopped")
 }
 
 func addCorsMiddleware(handler http.Handler) http.Handler {
