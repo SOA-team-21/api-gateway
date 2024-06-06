@@ -76,7 +76,7 @@ services:
     networks:
       - database
     ports:
-      - "8080:8080"
+      - "87:87"
     environment:
       - PORT=8080
       - NEO4J_DB=bolt://neo4j:7687

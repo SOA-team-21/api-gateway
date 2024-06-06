@@ -32,7 +32,7 @@ func main() {
 
 	followersConnection, err := grpc.DialContext(
 		context.Background(),
-		"followers:8080",
+		"followers:87",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
