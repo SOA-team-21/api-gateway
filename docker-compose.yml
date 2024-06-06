@@ -29,7 +29,7 @@ services:
       - database
       - monitoring
     environment:
-      - JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
+      - JAEGER_ENDPOINT=${JAEGER_ENDPOINT}
     ports:
       - "88:88"
     logging: *fluent-bit
